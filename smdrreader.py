@@ -127,7 +127,6 @@ class SMDREvent(object):
         for char in (smdr_string[6],
                      smdr_string[15],
                      smdr_string[27],
-                     smdr_string[34],
                      smdr_string[40],
                      smdr_string[85],
                      smdr_string[110]):
@@ -140,7 +139,7 @@ class SMDREvent(object):
         self.date = smdr_string[1:6]
         self.time = smdr_string[7:15]
         self.duration = smdr_string[17:27]
-        self.calling_party = smdr_string[28:34].strip()
+        self.calling_party = smdr_string[28:35].strip()
         self.time_to_answer = smdr_string[36:40].strip()
         self.dialed_digits = smdr_string[41:67].strip()
         self.completion_flag = smdr_string[67].strip()
@@ -164,7 +163,6 @@ class SMDREvent(object):
         for char in (smdr_string[6],
                      smdr_string[12],
                      smdr_string[24],
-                     smdr_string[30],
                      smdr_string[37],
                      smdr_string[82],
                      smdr_string[107]):
@@ -177,7 +175,7 @@ class SMDREvent(object):
         self.date = smdr_string[1:6]
         self.time = smdr_string[7:12] + ':00'
         self.duration = smdr_string[14:24]
-        self.calling_party = smdr_string[25:30].strip()
+        self.calling_party = smdr_string[25:32].strip()
         self.time_to_answer = smdr_string[33:37].strip()
         self.dialed_digits = smdr_string[38:64].strip()
         self.completion_flag = smdr_string[64].strip()
@@ -200,7 +198,6 @@ class SMDREvent(object):
             self.raise_validation_exception(113, smdr_string)
         for char in (smdr_string[6],
                      smdr_string[13],
-                     smdr_string[27],
                      smdr_string[32],
                      smdr_string[66],
                      smdr_string[101]):
@@ -214,7 +211,7 @@ class SMDREvent(object):
         time = datetime.datetime.strptime(smdr_string[7:13] + 'M', '%I:%M%p')
         self.time = time.strftime('%H:%M:%S')
         self.duration = smdr_string[14:22]
-        self.calling_party = smdr_string[23:27].strip()
+        self.calling_party = smdr_string[23:28].strip()
         self.time_to_answer = smdr_string[29:32].strip()
         self.dialed_digits = smdr_string[33:59].strip()
         self.completion_flag = smdr_string[59].strip()

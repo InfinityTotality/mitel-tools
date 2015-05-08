@@ -2,7 +2,6 @@ import re
 import sys
 import operator
 import smdrreader
-from time import sleep
 from collections import defaultdict
 
 

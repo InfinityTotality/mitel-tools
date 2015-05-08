@@ -7,7 +7,7 @@ class AgentGroup(object):
         if self.is_logged_in == True:
             print('Warning: this state change was invalid')
         self.is_logged_in = True
-        self.last_login = Time
+        self.last_login = time
 
 
     def logout(time):
