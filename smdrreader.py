@@ -76,9 +76,6 @@ class SMDREvent(object):
         elif event_length == 204:
             self.validate_204(smdr_string)
             self.init_204(smdr_string)
-        #elif event_length == 187:
-            #self.validate_187(smdr_string)
-            #self.init_187(smdr_string)
         elif event_length == 113:
             self.validate_113(smdr_String)
             self.init_113(smdr_string)
@@ -86,9 +83,19 @@ class SMDREvent(object):
             raise InvalidInputException('Unknown SMDR event encountered: '
                                         + smdr_string, severity=1)
 
+
+    def __str__(self):
+        return self.smdr_string
+ 
+
+    def __repr__(self):
+        return self.__str__()
+
+
     def raise_validation_exception(self, length, smdr_string):
-        raise InvalidInputException('SMDR event with length {} does not match expected format: {}'\
-                .format(length, smdr_string), severity=1)
+        raise InvalidInputException('SMDR event with length '
+                                    '{} does not match expected format: {}'
+                                    .format(length, smdr_string), severity=1)
 
 
     def init_non_event(self):
@@ -129,15 +136,6 @@ class SMDREvent(object):
 
 
     def init_207(self, smdr_string):
-        #match = re.match('([ -%+])([01][0-9]/[0-3][0-9]) ([01][0-9]:[0-5]' +
-#                '[0-9]:[0-5][0-9])  ( {10}|[0-9]{4}:[0-5][0-9]:[0-5][0-9]) ' +
-#                '([TX0-9#* ][0-9#* ]{4})  [* ]([0-9]{4}) ([0-9#* ]{26})' +
-#                '([ABETI ])([SF ])([TX0-9#* ][0-9#* ]{4}).{10}([XTCUI ]) ' +
-#                '([XT0-9#* ][0-9#* ]{4}).{9}([0-9 ]{6}) ([0-9]{3})   ' +
-#                '([0-9#* ]{10}) {11}([0-9#* ]{10}) {9}([A-Z][0-9]{7}) ' +
-#                '([A-Z]) ([A-Z][0-9]{7}) {35}', smdr_string)
-        #if match is None:
-        #    self.raise_validation_exception(207, smdr_string)
         self.length_flag = smdr_string[0]
         self.date = smdr_string[1:6]
         self.time = smdr_string[7:15]
@@ -195,22 +193,6 @@ class SMDREvent(object):
         self.associated_id = smdr_string[161:169].strip()
 
 
-    def validate_187(self, smdr_string):
-        try:
-            datetime.datetime.strptime(smdr_string[7:15], '%H:%M:%S')
-        except ValueError:
-            self.raise_validation_exception(187, smdr_string)
-        for char in (smdr_string[6],
-                     smdr_string[15],
-                     smdr_string[27],
-                     smdr_string[32],
-                     smdr_string[40],
-                     smdr_string[40],
-                     smdr_string[101]):
-            if char != ' ':
-                self.raise_validation_exception(113, smdr_string)
-
-
     def validate_113(self, smdr_string):
         try:
             datetime.datetime.strptime(smdr_string[7:13] + 'M', '%I:%M%p')
@@ -246,11 +228,3 @@ class SMDREvent(object):
         self.call_id = ''
         self.sequence_id = ''
         self.associated_id = ''
-
-
-    def __str__(self):
-        return self.smdr_string
- 
-
-    def __repr__(self):
-        return self.__str__()
