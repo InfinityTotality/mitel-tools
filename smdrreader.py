@@ -144,9 +144,9 @@ class SMDREvent(object):
         self.dialed_digits = smdr_string[41:67].strip()
         self.completion_flag = smdr_string[67].strip()
         self.speed_call_flag = smdr_string[68].strip()
-        self.called_party = smdr_string[69:74].strip()
+        self.called_party = smdr_string[69:76].strip()
         self.trans_conf_flag = smdr_string[84].strip()
-        self.third_party = smdr_string[86:90].strip()
+        self.third_party = smdr_string[86:92].strip()
         self.system_id = smdr_string[107:110]
         self.ani = smdr_string[113:123].strip()
         self.dnis = smdr_string[134:144].strip()
@@ -180,9 +180,9 @@ class SMDREvent(object):
         self.dialed_digits = smdr_string[38:64].strip()
         self.completion_flag = smdr_string[64].strip()
         self.speed_call_flag = smdr_string[65].strip()
-        self.called_party = smdr_string[69:71].strip()
+        self.called_party = smdr_string[66:73].strip()
         self.trans_conf_flag = smdr_string[81].strip()
-        self.third_party = smdr_string[83:87].strip()
+        self.third_party = smdr_string[83:90].strip()
         self.system_id = smdr_string[104:107]
         self.ani = smdr_string[110:120].strip()
         self.dnis = smdr_string[131:141].strip()

@@ -23,6 +23,8 @@ def read_all_data(data_dirs, start_date, end_date):
                 except smdrreader.InvalidInputException as e:
                     if e.severity > 0:
                         print(e)
+                    else:
+                        debug_print(e)
     return all_data
 
 
