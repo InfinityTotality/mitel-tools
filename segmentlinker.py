@@ -115,13 +115,11 @@ def group_all_calls(all_data):
 
 
 def print_unique_calls(events_by_id):
-    printed_ids = set()
-    for events in events_by_id.values():
-        if id(events) not in printed_ids:
-            printed_ids.add(id(events))
-            debug_print('Event list id {}:'.format(id(events))
-            print()
-            print('\n'.join([str(event) for event in events]))
+    events_lists = set(events_by_id.values())
+    for events in events_lists:
+        debug_print('Event list id {}:'.format(id(events)))
+        print()
+        print('\n'.join([str(event) for event in events]))
 
 
 def sort_calls(events_by_id):
@@ -131,13 +129,32 @@ def sort_calls(events_by_id):
         event_list.sort(key=operator.attrgetter('time'))
 
 
+def filter_condition(event):
+    return False
+
+
+def get_call_ids_by_filter(all_data):
+    call_ids = set()
+    for event in all_data:
+        if filter_condition(event) is True:
+            call_ids.add(event.call_id)
+            if event.associated_id != '':
+                call_ids.add(event.associated_id)
+    return call_ids
+
+
 call_ids = set()
 data_dir_args = []
 debug_mode = False
+filter_mode = False
 
 while '-v' in sys.argv:
     debug_mode = True
     sys.argv.remove('-v')
+
+while '-f' in sys.argv:
+    filter_mode = True
+    sys.argv.remove('-f')
 
 while '-c' in sys.argv:
     argindex = sys.argv.index('-c')
@@ -154,6 +171,9 @@ end_date = sys.argv[2]
 data_dir_args.extend(sys.argv[3:])
 
 all_data = read_all_data(data_dir_args, start_date, end_date)
+
+if filter_mode is True:
+    call_ids.union(get_call_ids_by_filter(all_data))
 
 if len(call_ids) > 0:
     events = group_calls_by_id(call_ids, all_data)
