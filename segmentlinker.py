@@ -5,9 +5,9 @@ import smdrreader
 from collections import defaultdict
 
 
-def debug_print(message):
+def debug_print(message, file=sys.stderr):
     if debug_mode is True:
-        print(message)
+        print(message, file=file)
 
 
 def read_all_data(data_dirs, start_date, end_date):
@@ -114,11 +114,13 @@ def group_all_calls(all_data):
 
 
 def print_unique_calls(events_by_id):
-    events_lists = set(events_by_id.values())
-    for list in events_lists:
-        debug_print('Event list id {}:'.format(id(list)))
-        print()
-        print('\n'.join([str(event) for event in list]))
+    printed_ids = set()
+    for list in events_by_id.values():
+        if id(list) not in printed_ids:
+            printed_ids.add(id(list))
+            print()
+            debug_print('Event list id {}:'.format(id(list)), file=sys.stdout)
+            print('\n'.join([str(event) for event in list]))
 
 
 def sort_calls(events_by_id):
@@ -129,14 +131,18 @@ def sort_calls(events_by_id):
 
 
 def get_call_ids_by_filter(all_data, filter_condition):
+    debug_print('Processing filter "{}"'.format(filter_condition))
     call_ids = set()
     for event in all_data:
         try:
             result = eval(filter_condition) 
         except:
-            debug_print('Failure evaluating filter condition "{}"', 1)
+            debug_print('Failure evaluating filter condition "{}"'
+                        .format(filter_condition))
             break
         if result is True:
+            debug_print('Found call id {} matching filter'
+                        .format(event.call_id))
             call_ids.add(event.call_id)
             if event.associated_id != '':
                 call_ids.add(event.associated_id)
@@ -176,10 +182,16 @@ data_dir_args.extend(sys.argv[3:])
 all_data = read_all_data(data_dir_args, start_date, end_date)
 
 for condition in filter_conditions:
-    call_ids.union(get_call_ids_by_filter(all_data, condition))
+    call_ids = call_ids.union(get_call_ids_by_filter(all_data, condition))
+
+debug_print('{} call IDs selected:'.format(len(call_ids)))
+debug_print(call_ids)
 
 if len(call_ids) > 0:
     events = group_calls_by_id(call_ids, all_data)
+elif len(filter_conditions) > 0:
+    print('No events found matching filter conditions', file=sys.stderr)
+    exit()
 else:
     events = group_all_calls(all_data)
 sort_calls(events)
