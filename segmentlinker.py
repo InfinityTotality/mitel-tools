@@ -131,7 +131,12 @@ def sort_calls(events_by_id):
 def get_call_ids_by_filter(all_data, filter_condition):
     call_ids = set()
     for event in all_data:
-        if eval(filter_condition) is True:
+        try:
+            result = eval(filter_condition) 
+        except:
+            debug_print('Failure evaluating filter condition "{}"', 1)
+            break
+        if result is True:
             call_ids.add(event.call_id)
             if event.associated_id != '':
                 call_ids.add(event.associated_id)
