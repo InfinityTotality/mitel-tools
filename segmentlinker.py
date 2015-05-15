@@ -25,7 +25,13 @@ def get_node_dirs(data_dir):
 def read_all_data(data_dirs, start_date, end_date):
     all_data = []
     for dir in data_dirs:
-        reader = smdrreader.SMDRReader(dir, start_date, end_date)
+        try:
+            reader = smdrreader.SMDRReader(dir, start_date, end_date)
+        except smdrreader.InvalidInputException as e:
+            print('Error while creating SMDR reader for directory {}:'
+                  .format(dir))
+            print(e, file=sys.stderr)
+            continue
         for file in reader.file_reader():
             for line in file:
                 line = line.decode(sys.stdout.encoding)
@@ -196,7 +202,7 @@ data_dir = sys.argv[3]
 
 try:
     data_dirs = get_node_dirs(data_dir)
-except InvalidInputException as e:
+except smdrreader.InvalidInputException as e:
     print(e)
     exit()
 except PermissionError as e:

@@ -1,15 +1,19 @@
 import re
+import os
 import sys
 import zipfile
 import datetime
-from os import path
 
 class SMDRReader(object):
     def __init__(self, data_directory, start_date, end_date):
-        if path.isdir(data_directory):
+        try:
+            os.listdir(data_directory)
             self.data_directory = data_directory
-        else:
-            raise InvalidInputException('Invalid path for SMDR files')
+        except FileNotFoundError:
+            raise InvalidInputException('The specified path does not exist')
+        except PermissionError:
+            raise InvalidInputException('You do not have permission to access'
+                                        ' this directory')
 
         try:
             self.start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
@@ -26,14 +30,14 @@ class SMDRReader(object):
         self.current_date = self.start_date
         while self.current_date <= self.end_date:
             basename = 's{}'.format(self.current_date.strftime('%Y%m%d'))
-            filename = path.join(self.data_directory, basename)
+            filename = os.path.join(self.data_directory, basename)
 
-            if path.isfile('{}.zip'.format(filename)):
+            if os.path.isfile('{}.zip'.format(filename)):
                 myzip = zipfile.ZipFile('{}.zip'.format(filename))
                 with myzip.open('{}.txt'.format(basename)) as smdr_file:
                     myzip.close()
                     yield smdr_file.readlines()
-            elif path.isfile('{}.txt'.format(filename)):
+            elif os.path.isfile('{}.txt'.format(filename)):
                 with open('{}.txt'.format(filename), 'rb') as smdr_file:
                     yield smdr_file.readlines()
             else:
@@ -44,7 +48,7 @@ class SMDRReader(object):
 
 
     def change_directory(self, new_directory):
-        if path.isdir(new_directory):
+        if os.path.isdir(new_directory):
             self.data_directory = new_directory
             return True
         else:
@@ -57,7 +61,10 @@ class InvalidInputException(Exception):
         self.severity = severity
 
     def __str__(self):
-        return repr(self.value)
+        return str(self.value)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class SMDREvent(object):
