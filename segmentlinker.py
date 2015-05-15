@@ -1,4 +1,5 @@
 import re
+import os
 import sys
 import operator
 import smdrreader
@@ -8,6 +9,17 @@ from collections import defaultdict
 def debug_print(message, file=sys.stderr):
     if debug_mode is True:
         print(message, file=file)
+
+
+def get_node_dirs(data_dir):
+    node_dirs = []
+    if not os.path.isdir(data_dir):
+        raise smdrreader.InvalidInputException('{} is not a valid directory'
+                .format(data_dir), severity=2)
+    for dir in os.listdir(data_dir):
+        if re.match('Node_\d\d', dir, re.I) is not None:
+            node_dirs.append(os.path.join(data_dir, dir))
+    return node_dirs
 
 
 def read_all_data(data_dirs, start_date, end_date):
@@ -123,6 +135,8 @@ def print_unique_calls(events_by_id):
             print()
             debug_print('Event list id {}:'.format(id(list)), file=sys.stdout)
             print('\n'.join([str(event) for event in list]))
+    print('\n{} unique calls processed'.format(len(printed_ids)),
+          file=sys.stderr)
 
 
 def sort_calls(events_by_id):
@@ -153,7 +167,6 @@ def get_call_ids_by_filter(all_data, filter_condition):
 
 call_ids = set()
 filter_conditions = set()
-data_dir_args = []
 debug_mode = False
 
 while '-v' in sys.argv:
@@ -179,9 +192,18 @@ while '-c' in sys.argv:
 
 start_date = sys.argv[1]
 end_date = sys.argv[2]
-data_dir_args.extend(sys.argv[3:])
+data_dir = sys.argv[3]
 
-all_data = read_all_data(data_dir_args, start_date, end_date)
+try:
+    data_dirs = get_node_dirs(data_dir)
+except InvalidInputException as e:
+    print(e)
+    exit()
+except PermissionError as e:
+    print('You do not have permission to access {}'.format(data_dir))
+    exit()
+
+all_data = read_all_data(data_dirs, start_date, end_date)
 
 for condition in filter_conditions:
     call_ids = call_ids.union(get_call_ids_by_filter(all_data, condition))

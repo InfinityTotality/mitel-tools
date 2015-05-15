@@ -1,4 +1,5 @@
 import re
+import sys
 import zipfile
 import datetime
 from os import path
@@ -36,9 +37,8 @@ class SMDRReader(object):
                 with open('{}.txt'.format(filename), 'rb') as smdr_file:
                     yield smdr_file.readlines()
             else:
-                print('Failed to locate file {}'.format(filename))
-                print('No records for {}'.format(self.current_date.strftime(
-                    '%Y-%m-%d')))
+                print('Failed to locate file {}'.format(filename),
+                      file=sys.stderr)
 
             self.current_date += datetime.timedelta(days=1)
 
