@@ -18,7 +18,8 @@ class AgentGroup(object):
 
 
 class ACDAgent(object):
-    def __init__(self):
+    def __init__(self, reporting):
+        self.reporting = reporting
         self.extension = None
         self.is_logged_in = None
         self.last_login = None

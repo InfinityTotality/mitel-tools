@@ -1,5 +1,6 @@
 import acdreader
 import acdagent
+import operator
 import sys
 import re
 from datetime import datetime
@@ -31,13 +32,28 @@ target_time = datetime.strptime(sys.argv[2], '%Y-%m-%d %H:%M:%S')
 agents = {}
 
 def print_results():
-    print('Logged in agents at ' + target_time.strftime('%Y-%m-%d %H:%M:%S')
-          + ':')
-    for agent in agents:
-        if agents[agent].is_logged_in == True:
-            print('Agent: ' + agent + '\tExtension: '
-                  + agents[agent].extension + '\tLast login: '
-                  + agents[agent].last_login.strftime('%Y-%m-%d %H:%M:%S'))
+    logged_in_agents = []
+    logged_out_agents = []
+    for agent in agents.values():
+        if agent.is_logged_in == True:
+            logged_in_agents.append(agent)
+        elif agent.is_logged_in == False:
+            logged_out_agents.append(agent)
+    logged_in_agents.sort(key=operator.attrgetter('reporting'))
+    logged_out_agents.sort(key=operator.attrgetter('reporting'))
+
+    print('Logged in agents at {}:'
+          .format(target_time.strftime('%Y-%m-%d %H:%M:%S')))
+    for agent in logged_in_agents:
+        print('Agent: {}\tExtension: {}\tLast login: {}'
+              .format(agent.reporting, agent.extension,
+              agent.last_login.strftime('%Y-%m-%d %H:%M:%S')))
+    print('Known logged out agents:')
+    for agent in logged_out_agents:
+        print('Agent: {}\tExtension: {}\tLast logout: {}'
+              .format(agent.reporting, agent.extension,
+              agent.last_logout.strftime('%Y-%m-%d %H:%M:%S')))
+
 
 
 def process_files():
@@ -59,13 +75,13 @@ def process_files():
                           ' logged in to extension ' + extension +
                           ' at ' + current_time.strftime('%H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.ACDAgent()
+                        agents[agent] = acdagent.ACDAgent(agent)
                     agents[agent].login(extension, current_time)
                 elif line[2] == 'B':
                     print('Agent ' + agent + ' logged out at '
                           + current_time.strftime('%H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.ACDAgent()
+                        agents[agent] = acdagent.ACDAgent(agent)
                     agents[agent].logout(current_time)
                 else:
                     print('Invalid event: ' + line[2])
@@ -89,14 +105,14 @@ def process_files():
                           ' logged in to group ' + group + ' at '
                           + current_time.strftime('%Y-%m-%d %H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.ACDAgent()
+                        agents[agent] = acdagent.ACDAgent(agent)
                     agents[agent].login_to_group(group, current_time)
                 elif line_parts[8] == 1008:
                     print('Agent ' + agent + 
                           ' logged out of group ' + group + ' at '
                           + current_time.strftime('%Y-%m-%d %H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.ACDAgent()
+                        agents[agent] = acdagent.ACDAgent(agent)
                     agents[agent].logout_from_group(group, current_time)
 
 
