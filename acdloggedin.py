@@ -59,13 +59,13 @@ def process_files():
                           ' logged in to extension ' + extension +
                           ' at ' + current_time.strftime('%H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.AcdAgent()
+                        agents[agent] = acdagent.ACDAgent()
                     agents[agent].login(extension, current_time)
                 elif line[2] == 'B':
                     print('Agent ' + agent + ' logged out at '
                           + current_time.strftime('%H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.AcdAgent()
+                        agents[agent] = acdagent.ACDAgent()
                     agents[agent].logout(current_time)
                 else:
                     print('Invalid event: ' + line[2])
@@ -87,16 +87,16 @@ def process_files():
                 if line_parts[7] == 1007:
                     print('Agent ' + agent + 
                           ' logged in to group ' + group + ' at '
-                          + current_time.strftime('%Y-%m-%d %H:%M:%S')
+                          + current_time.strftime('%Y-%m-%d %H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.AcdAgent()
+                        agents[agent] = acdagent.ACDAgent()
                     agents[agent].login_to_group(group, current_time)
                 elif line_parts[8] == 1008:
                     print('Agent ' + agent + 
                           ' logged out of group ' + group + ' at '
-                          + current_time.strftime('%Y-%m-%d %H:%M:%S')
+                          + current_time.strftime('%Y-%m-%d %H:%M:%S'))
                     if agent not in agents:
-                        agents[agent] = acdagent.AcdAgent()
+                        agents[agent] = acdagent.ACDAgent()
                     agents[agent].logout_from_group(group, current_time)
 
 
