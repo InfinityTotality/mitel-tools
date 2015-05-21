@@ -92,8 +92,8 @@ def process_files():
                 if current_time >= target_time:
                     return
                 line_parts = line.split('|')
-                if len(line_parts) < 12 or line_parts[6] != '3033'
-                or (line_parts[7] != '1007' and line_parts[7] != '1008'):
+                if (len(line_parts) < 12 or line_parts[6] != '3033' or
+                    (line_parts[7] != '1007' and line_parts[7] != '1008')):
                     continue
                 extension = line_parts[4].replace('-', '').strip()
                 agent = line_parts[11].strip()
