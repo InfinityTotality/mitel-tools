@@ -113,7 +113,7 @@ def process_files():
     for file in reader.file_reader():
         for bline in file:
             line = bline.decode(sys.stdout.encoding)
-            if line[2] in ['A', 'B', 'y']:
+            if line[2] in ('A', 'B', 'y'):
                 current_time = datetime.strptime(
                         reader.current_date.strftime('%Y%m%d')
                         + line[3:9], '%Y%m%d%H%M%S')
