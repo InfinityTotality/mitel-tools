@@ -139,8 +139,8 @@ def print_unique_calls(events_by_id):
     for list in events_by_id.values():
         if id(list) not in printed_ids:
             printed_ids.add(id(list))
-            unique_event_lists.append(events)
-    unique_event_lists.sort(key=lambda x: x[0].event_time)
+            unique_event_lists.append(list)
+    unique_event_lists.sort(key=lambda x: x[0].time)
     for list in unique_event_lists:
             print()
             debug_print('Event list id {}:'.format(id(list)), file=sys.stdout)
