@@ -84,7 +84,7 @@ def associate_ids(id_one, id_two, events_by_id, ids_by_events):
         merge_ids(id_one, id_two, events_by_id, ids_by_events)
     elif id_one in events_by_id and id_two not in events_by_id:
         associate_new_id(id_one, id_two, events_by_id, ids_by_events)
-    elif id_two in events_by_id and id_one not in events_by_id:      
+    elif id_two in events_by_id and id_one not in events_by_id:
         associate_new_id(id_two, id_one, events_by_id, ids_by_events)
     else:
         debug_print('Warning: tried to associate two new IDs: {} and {}'
@@ -161,7 +161,7 @@ def get_call_ids_by_filter(all_data, filter_condition):
     call_ids = set()
     for event in all_data:
         try:
-            result = eval(filter_condition) 
+            result = eval(filter_condition)
         except:
             debug_print('Failure evaluating filter condition "{}"'
                         .format(filter_condition))

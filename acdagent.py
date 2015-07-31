@@ -56,3 +56,10 @@ class ACDAgent(object):
         if group not in self.agent_groups:
             self.agent_groups[group] = AgentGroup()
         self.agent_groups[group].logout(time)
+
+
+    def logout_from_all_groups(self, time):
+        if self.is_logged_in == False:
+            print('Warning: logged out of agent group while not logged in')
+        for group in self.agent_groups.values():
+            group.logout(time)
