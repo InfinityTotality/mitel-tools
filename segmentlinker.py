@@ -163,7 +163,7 @@ def get_call_ids_by_filter(all_data, filter_condition):
         try:
             result = eval(filter_condition)
         except:
-            debug_print('Failure evaluating filter condition "{}"'
+            print('Failure evaluating filter condition "{}"'
                         .format(filter_condition))
             break
         if result is True:
