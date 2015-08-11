@@ -146,11 +146,12 @@ def get_unique_calls(events_by_id):
 def print_unique_calls(events_by_id):
     unique_event_lists = get_unique_calls(events_by_id)
     unique_event_lists.sort(key=lambda x: x[0].time)
+    unique_event_lists.sort(key=lambda x: x[0].date)
     for list in unique_event_lists:
             print()
             debug_print('Event list id {}:'.format(id(list)), file=sys.stdout)
             print('\n'.join([str(event) for event in list]))
-    print('\n{} unique calls processed'.format(len(printed_ids)),
+    print('\n{} unique calls processed'.format(len(unique_event_lists)),
           file=sys.stderr)
 
 
