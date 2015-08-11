@@ -133,13 +133,18 @@ def group_all_calls(all_data):
     return events_by_id
 
 
-def print_unique_calls(events_by_id):
+def get_unique_calls(events_by_id):
     printed_ids = set()
     unique_event_lists = []
     for list in events_by_id.values():
         if id(list) not in printed_ids:
             printed_ids.add(id(list))
             unique_event_lists.append(list)
+    return unique_event_lists
+
+
+def print_unique_calls(events_by_id):
+    unique_event_lists = get_unique_calls(events_by_id)
     unique_event_lists.sort(key=lambda x: x[0].time)
     for list in unique_event_lists:
             print()
@@ -147,6 +152,16 @@ def print_unique_calls(events_by_id):
             print('\n'.join([str(event) for event in list]))
     print('\n{} unique calls processed'.format(len(printed_ids)),
           file=sys.stderr)
+
+
+def print_unique_anis(events_by_id):
+    unique_event_lists = get_unique_calls(events_by_id)
+    unique_event_lists.sort(key=lambda x: x[0].ani)
+    for events in unique_event_lists:
+        anis = set()
+        for event in events:
+            anis.add(event.ani)
+        print('\n'.join(anis))
 
 
 def sort_calls(events_by_id):
