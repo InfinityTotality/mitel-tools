@@ -34,7 +34,7 @@ def read_all_data(data_dirs, start_date, end_date):
             continue
         for file in reader.file_reader():
             for line in file:
-                line = line.decode(sys.stdout.encoding)
+                line = line.decode('utf-8-sig')
                 try:
                     event = smdrreader.SMDREvent(line)
                     all_data.append(event)

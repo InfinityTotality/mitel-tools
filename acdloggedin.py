@@ -114,7 +114,7 @@ def process_group_event(line, current_time):
 def process_files():
     for file in reader.file_reader():
         for bline in file:
-            line = bline.decode(sys.stdout.encoding)
+            line = bline.decode('utf-8-sig')
             if line[2] in ('A', 'B', 'y'):
                 current_time = datetime.strptime(
                         reader.current_date.strftime('%Y%m%d')
