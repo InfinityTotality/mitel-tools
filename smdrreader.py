@@ -124,8 +124,7 @@ class SMDREvent(object):
             self.validate_113(smdr_String)
             self.init_113(smdr_string)
         else:
-            raise InvalidInputException('Unknown SMDR event encountered: '
-                                        + smdr_string, severity=1)
+            raise InvalidInputException('Unknown SMDR event encountered', severity=1)
 
 
     def __str__(self):

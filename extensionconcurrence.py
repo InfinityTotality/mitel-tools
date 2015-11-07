@@ -5,6 +5,11 @@ import smdrreader
 from os import path
 
 
+def debug_print(message, file=sys.stderr):
+    if debug_mode is True:
+        print(message, file=file)
+
+
 def duration_to_seconds(duration):
     duration_parts = duration.split(':')
     hours = int(duration_parts[0])
@@ -21,8 +26,10 @@ def parse_lines(smdr_lines, extension_data):
         try:
             event = smdrreader.SMDREvent(line)
         except smdrreader.InvalidInputException as e:
-            print(str(e), file=sys.stderr)
-            print(line, file=sys.stderr)
+            if e.severity > 0:
+                print(str(e) + ': ' + line.strip(), file=sys.stderr)
+            else:
+                debug_print(str(e) + ': ' + line.strip())
             continue
         extension = event.called_party
         if extension in extension_data:
@@ -34,8 +41,9 @@ def parse_lines(smdr_lines, extension_data):
                 event_timedate_string = '{} {}'.format(event.date,
                         event_current_time.strftime('%H:%M:%S'))
                 if extension_data[extension][event_timedate_string] == 1:
-                    print('Duplicate call events detected for extension' +
-                          '{} on {} at {}'.format(extension,event.date,event.time))
+                    print('Duplicate call events detected for extension ' +
+                          '{} on {} at {}'.format(
+                          extension,event.date,event.time), file=sys.stderr)
                 extension_data[extension][event_timedate_string] = 1
                 i += 1
 
@@ -76,12 +84,13 @@ def print_results_with_zeroes(data, number_of_extensions):
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
-        elif count >= number_of_extensions * 3 / 4:
+        elif count >= number_of_extensions * 3 / 4 or\
+                number_of_extensions - count == 1:
             high_use_events += 1
         print('{}\t{}'.format(time, count))
         current_datetime += datetime.timedelta(seconds=1)
-    print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
-    print('{} total seconds of all in use:'.format(all_in_use_events), file=sys.stderr)
+    print('{} total seconds of high usage'.format(high_use_events), file=sys.stderr)
+    print('{} total seconds of all in use'.format(all_in_use_events), file=sys.stderr)
 
 
 def print_results(data, number_of_extensions):
@@ -93,11 +102,12 @@ def print_results(data, number_of_extensions):
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
-        elif count >= number_of_extensions * 3 / 4:
+        elif count >= number_of_extensions * 3 / 4 or\
+                number_of_extensions - count == 1:
             high_use_events += 1
         print('{}\t{}'.format(time, count))
-    print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
-    print('{} total seconds of all in use:'.format(all_in_use_events), file=sys.stderr)
+    print('{} total seconds of high usage'.format(high_use_events), file=sys.stderr)
+    print('{} total seconds of all in use'.format(all_in_use_events), file=sys.stderr)
 
 
 def summarize(smdr_reader, extensions, zero_mode):
@@ -117,6 +127,11 @@ zero_mode = False
 while '-0' in sys.argv:
     zero_mode = True
     sys.argv.remove('-0')
+
+debug_mode = False
+while '-v' in sys.argv:
+    debug_mode = True
+    sys.argv.remove('-v')
 
 start_date = sys.argv[1]
 end_date = sys.argv[2]
