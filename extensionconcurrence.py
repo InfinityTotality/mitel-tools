@@ -17,11 +17,12 @@ def duration_to_seconds(duration):
 
 def parse_lines(smdr_lines, extension_data):
     for line in smdr_lines:
+        line = line.decode('UTF-8-SIG')
         try:
-            event = smdrreader.SMDREvent(line.decode('UTF-8-SIG'))
+            event = smdrreader.SMDREvent(line)
         except smdrreader.InvalidInputException as e:
             print(str(e), file=sys.stderr)
-            print(line)
+            print(line, file=sys.stderr)
             continue
         extension = event.called_party
         if extension in extension_data:
@@ -55,7 +56,8 @@ def split_args(args):
         for word in words:
             if '-' in word:
                 range_parts = word.split('-')
-                split_args.extend(range(range_parts[0], range_parts[1]))
+                int_list = range(int(range_parts[0]), int(range_parts[1]) + 1)
+                split_args.extend([str(int) for int in int_list])
             else:
                 split_args.append(word)
     return split_args
@@ -74,7 +76,7 @@ def print_results_with_zeroes(data, number_of_extensions):
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
-        elif count > number_of_extensions * 3 / 4:
+        elif count >= number_of_extensions * 3 / 4:
             high_use_events += 1
         print('{}\t{}'.format(time, count))
         current_datetime += datetime.timedelta(seconds=1)
@@ -91,7 +93,7 @@ def print_results(data, number_of_extensions):
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
-        elif count > number_of_extensions * 3 / 4:
+        elif count >= number_of_extensions * 3 / 4:
             high_use_events += 1
         print('{}\t{}'.format(time, count))
     print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
