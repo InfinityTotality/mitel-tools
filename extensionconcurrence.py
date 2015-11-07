@@ -18,9 +18,9 @@ def duration_to_seconds(duration):
 def parse_lines(smdr_lines, extension_data):
     for line in smdr_lines:
         try:
-            event = smdrreader.SMDREvent(line.decode('UTF-8'))
+            event = smdrreader.SMDREvent(line.decode('UTF-8-SIG'))
         except smdrreader.InvalidInputException as e:
-            print(str(e))
+            print(str(e), file=sys.stderr)
             print(line)
             continue
         extension = event.called_party
@@ -50,22 +50,19 @@ def combine_extensions(extension_data):
 
 def print_results(data, number_of_extensions):
     sorted_data = sorted(data.items(), key=lambda item: item[0])
-    all_in_use_events = []
-    high_use_events = []
+    all_in_use_events = 0
+    high_use_events = 0
 
     for time,count in sorted_data:
         if count == number_of_extensions:
-            all_in_use_events.append((time,count))
+            all_in_use_events += 1
+            high_use_events += 1
         elif count > number_of_extensions * 3 / 4:
-            high_use_events.append((time,count))
+            high_use_events += 1
         print('{}  {}'.format(time, count))
     
-    print('{} high usage events:'.format(len(high_use_events)))
-    for time,count in high_use_events:
-        print('{}  {}'.format(time, count))
-    print('{} all in use events:'.format(len(all_in_use_events)))
-    for time,count in all_in_use_events:
-        print('{}  {}'.format(time, count))
+    print('{} high usage events:'.format(high_use_events))
+    print('{} all in use events:'.format(all_in_use_events))
 
 
 def summarize(smdr_reader, extensions):
@@ -87,7 +84,7 @@ data_directory = sys.argv[3]
 try:
     smdr_reader = smdrreader.SMDRReader(data_directory, start_date, end_date)
 except smdrreader.InvalidInputException as e:
-    print('Error: ' + str(e))
+    print('Error: ' + str(e), file=sys.stderr)
     exit(1)
 
 extensions = sys.argv[4:]
