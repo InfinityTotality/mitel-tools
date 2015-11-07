@@ -26,24 +26,61 @@ class SMDRReader(object):
             raise InvalidInputException('Invalid end date')
 
 
+    def get_node_dirs(self, data_dir):
+        node_dirs = []
+        for dir in os.listdir(data_dir):
+            if re.match('Node_\d\d+', dir, re.I) is not None:
+                node_dirs.append(os.path.join(data_dir, dir))
+        return node_dirs
+
+
+    def get_file_by_date(self, path, date):
+            basename = None
+            datestring = date.strftime('%Y%m%d')
+            filelist = os.listdir(path)
+            for file in filelist:
+                if re.match('s' + datestring + '\.(zip|txt)',
+                            file, re.I) is not None:
+                    basename = file
+            if basename is None:
+                return None
+
+            filename,fileextension = os.path.splitext(basename)
+            filefullpath = os.path.join(path, basename)
+
+            if fileextension.lower() == '.zip':
+                myzip = zipfile.ZipFile(filefullpath)
+                with myzip.open('{}.txt'.format(filename)) as smdr_file:
+                    file_lines = smdr_file.readlines()
+                myzip.close()
+            elif fileextension.lower() == '.txt':
+                with open(filefullpath, 'rb') as smdr_file:
+                    file_lines = smdr_file.readlines()
+            else:
+                return None
+            return file_lines
+
+
     def file_reader(self):
         self.current_date = self.start_date
         while self.current_date <= self.end_date:
-            basename = 's{}'.format(self.current_date.strftime('%Y%m%d'))
-            filename = os.path.join(self.data_directory, basename)
-
-            if os.path.isfile('{}.zip'.format(filename)):
-                myzip = zipfile.ZipFile('{}.zip'.format(filename))
-                with myzip.open('{}.txt'.format(basename)) as smdr_file:
-                    myzip.close()
-                    yield smdr_file.readlines()
-            elif os.path.isfile('{}.txt'.format(filename)):
-                with open('{}.txt'.format(filename), 'rb') as smdr_file:
-                    yield smdr_file.readlines()
+            file = self.get_file_by_date(self.data_directory, self.current_date)
+            if file is not None:
+                yield file
             else:
-                print('Failed to locate file {}'.format(filename),
-                      file=sys.stderr)
+                yield []
+            self.current_date += datetime.timedelta(days=1)
 
+
+    def date_reader(self):
+        self.current_date = self.start_date
+        node_dirs = self.get_node_dirs(self.data_directory)
+        file_dict = dict((os.path.basename(dir), None) for dir in node_dirs)
+        while self.current_date <= self.end_date:
+            for dir in node_dirs:
+                file = self.get_file_by_date(dir, self.current_date)
+                file_dict[os.path.basename(dir)] = file
+            yield file_dict
             self.current_date += datetime.timedelta(days=1)
 
 
@@ -93,7 +130,7 @@ class SMDREvent(object):
 
     def __str__(self):
         return self.smdr_string
- 
+
 
     def __repr__(self):
         return self.__str__()
@@ -232,3 +269,4 @@ class SMDREvent(object):
         self.call_id = ''
         self.sequence_id = ''
         self.associated_id = ''
+

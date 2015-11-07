@@ -11,38 +11,26 @@ def debug_print(message, file=sys.stderr):
         print(message, file=file)
 
 
-def get_node_dirs(data_dir):
-    node_dirs = []
-    if not os.path.isdir(data_dir):
-        raise smdrreader.InvalidInputException('{} is not a valid directory'
-                .format(data_dir), severity=2)
-    for dir in os.listdir(data_dir):
-        if re.match('Node_\d\d', dir, re.I) is not None:
-            node_dirs.append(os.path.join(data_dir, dir))
-    return node_dirs
-
-
-def read_all_data(data_dirs, start_date, end_date):
+def read_all_data(file_dict, date):
     all_data = []
-    for dir in data_dirs:
-        try:
-            reader = smdrreader.SMDRReader(dir, start_date, end_date)
-        except smdrreader.InvalidInputException as e:
-            print('Error while creating SMDR reader for directory {}:'
-                  .format(dir))
-            print(e, file=sys.stderr)
+    for dir,file in file_dict.items():
+        if file is None:
+            print('No data file found for {} in {}'.format(
+                  date.strftime('%Y-%m-%d'),dir), file=sys.stderr)
             continue
-        for file in reader.file_reader():
-            for line in file:
-                line = line.decode('utf-8-sig')
-                try:
-                    event = smdrreader.SMDREvent(line)
-                    all_data.append(event)
-                except smdrreader.InvalidInputException as e:
-                    if e.severity > 0:
-                        print(e)
-                    else:
-                        debug_print(e)
+        debug_print('{} lines read from file for {}'.format(len(file),
+                    os.path.basename(dir)))
+        for line in file:
+            line = line.decode('UTF-8-SIG')
+            try:
+                event = smdrreader.SMDREvent(line)
+                all_data.append(event)
+            except smdrreader.InvalidInputException as e:
+                if e.severity > 0:
+                    print(str(e) + ': ' + line.rstrip(), file=sys.stderr)
+                else:
+                    debug_print(str(e) + ': ' + line.rstrip())
+    debug_print('{} events processed from dict'.format(len(all_data)))
     return all_data
 
 
@@ -151,8 +139,7 @@ def print_unique_calls(events_by_id):
             print()
             debug_print('Event list id {}:'.format(id(list)), file=sys.stdout)
             print('\n'.join([str(event) for event in list]))
-    print('\n{} unique calls processed'.format(len(unique_event_lists)),
-          file=sys.stderr)
+    return len(unique_event_lists)
 
 
 def print_unique_anis(events_by_id):
@@ -180,7 +167,7 @@ def get_call_ids_by_filter(all_data, filter_condition):
             result = eval(filter_condition)
         except:
             print('Failure evaluating filter condition "{}"'
-                        .format(filter_condition))
+                        .format(filter_condition), file=sys.stderr)
             break
         if result is True:
             debug_print('Found call id {} matching filter'
@@ -189,6 +176,35 @@ def get_call_ids_by_filter(all_data, filter_condition):
             if event.associated_id != '':
                 call_ids.add(event.associated_id)
     return call_ids
+
+
+def process_days(reader, filter_conditions, call_ids):
+    unique_calls = 0
+    for file_dict in reader.date_reader():
+        debug_print('Retrieved file dictionary for date {}'.format(
+                    reader.current_date.strftime('%Y-%m-%d'))
+                    + ' from reader containing {} files'.format(
+                    len(file_dict)))
+        all_data = read_all_data(file_dict, reader.current_date)
+
+        for condition in filter_conditions:
+            current_call_ids = call_ids.union(get_call_ids_by_filter(
+                                              all_data, condition))
+
+        debug_print('{} call IDs selected for {}:'.format(len(current_call_ids),
+                    reader.current_date.strftime('%Y-%m-%d')))
+        debug_print(current_call_ids)
+
+        if len(current_call_ids) > 0:
+            events = group_calls_by_id(current_call_ids, all_data)
+        elif len(filter_conditions) == 0:
+            events = group_all_calls(all_data)
+        else:
+            continue
+        sort_calls(events)
+        unique_calls += print_unique_calls(events)
+    print('\n{} unique calls processed'.format(unique_calls), file=sys.stderr)
+
 
 
 call_ids = set()
@@ -221,28 +237,10 @@ end_date = sys.argv[2]
 data_dir = sys.argv[3]
 
 try:
-    data_dirs = get_node_dirs(data_dir)
+    smdr_reader = smdrreader.SMDRReader(data_dir, start_date, end_date)
+    debug_print('SMDRReader created successfully')
 except smdrreader.InvalidInputException as e:
-    print(e)
-    exit()
-except PermissionError as e:
-    print('You do not have permission to access {}'.format(data_dir))
+    print('Error: ' + str(e), file=sys.stderr)
     exit()
 
-all_data = read_all_data(data_dirs, start_date, end_date)
-
-for condition in filter_conditions:
-    call_ids = call_ids.union(get_call_ids_by_filter(all_data, condition))
-
-debug_print('{} call IDs selected:'.format(len(call_ids)))
-debug_print(call_ids)
-
-if len(call_ids) > 0:
-    events = group_calls_by_id(call_ids, all_data)
-elif len(filter_conditions) > 0:
-    print('No events found matching filter conditions', file=sys.stderr)
-    exit()
-else:
-    events = group_all_calls(all_data)
-sort_calls(events)
-print_unique_calls(events)
+process_days(smdr_reader,filter_conditions,call_ids)

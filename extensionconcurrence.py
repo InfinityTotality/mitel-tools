@@ -60,9 +60,9 @@ def print_results(data, number_of_extensions):
         elif count > number_of_extensions * 3 / 4:
             high_use_events += 1
         print('{}  {}'.format(time, count))
-    
-    print('{} high usage events:'.format(high_use_events))
-    print('{} all in use events:'.format(all_in_use_events))
+
+    print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
+    print('{} total seconds of all in use:'.format(all_in_use_events), file=sys.stderr)
 
 
 def summarize(smdr_reader, extensions):
@@ -74,8 +74,6 @@ def summarize(smdr_reader, extensions):
     print_results(combined_data, len(extensions))
 
 
-
-# script body
 
 start_date = sys.argv[1]
 end_date = sys.argv[2]
