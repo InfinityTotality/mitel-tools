@@ -129,7 +129,7 @@ try:
     debug_print('SMDRReader created successfully')
 except smdrreader.InvalidInputException as e:
     print('Error: ' + str(e))
-    exit()
+    sys.exit(1)
 
 filtered_events = []
 

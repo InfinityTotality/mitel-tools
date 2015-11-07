@@ -141,7 +141,7 @@ try:
     smdr_reader = smdrreader.SMDRReader(data_directory, start_date, end_date)
 except smdrreader.InvalidInputException as e:
     print('Error: ' + str(e), file=sys.stderr)
-    exit(1)
+    sys.exit(1)
 
 extensions = split_args(sys.argv[4:])
 

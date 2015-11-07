@@ -187,9 +187,10 @@ def process_days(reader, filter_conditions, call_ids):
                     len(file_dict)))
         all_data = read_all_data(file_dict, reader.current_date)
 
+        current_call_ids = call_ids
         for condition in filter_conditions:
-            current_call_ids = call_ids.union(get_call_ids_by_filter(
-                                              all_data, condition))
+            current_call_ids = current_call_ids.union(get_call_ids_by_filter(
+                                                      all_data, condition))
 
         debug_print('{} call IDs selected for {}:'.format(len(current_call_ids),
                     reader.current_date.strftime('%Y-%m-%d')))
@@ -241,6 +242,6 @@ try:
     debug_print('SMDRReader created successfully')
 except smdrreader.InvalidInputException as e:
     print('Error: ' + str(e), file=sys.stderr)
-    exit()
+    sys.exit(1)
 
 process_days(smdr_reader,filter_conditions,call_ids)
