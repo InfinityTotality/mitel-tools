@@ -48,6 +48,40 @@ def combine_extensions(extension_data):
     return combined_data
 
 
+def split_args(args):
+    split_args = []
+    for arg in args:
+        words = arg.split(' ')
+        for word in words:
+            if '-' in word:
+                range_parts = word.split('-')
+                split_args.extend(range(range_parts[0], range_parts[1]))
+            else:
+                split_args.append(word)
+    return split_args
+
+
+def print_results_with_zeroes(data, number_of_extensions):
+    sorted_data = sorted(data)
+    current_datetime = datetime.datetime.strptime(sorted_data[0], '%m/%d %H:%M:%S')
+    end_datetime = datetime.datetime.strptime(sorted_data[-1], '%m/%d %H:%M:%S')
+    all_in_use_events = 0
+    high_use_events = 0
+
+    while current_datetime <= end_datetime:
+        time = current_datetime.strftime('%m/%d %H:%M:%S')
+        count = data[time]
+        if count == number_of_extensions:
+            all_in_use_events += 1
+            high_use_events += 1
+        elif count > number_of_extensions * 3 / 4:
+            high_use_events += 1
+        print('{}\t{}'.format(time, count))
+        current_datetime += datetime.timedelta(seconds=1)
+    print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
+    print('{} total seconds of all in use:'.format(all_in_use_events), file=sys.stderr)
+
+
 def print_results(data, number_of_extensions):
     sorted_data = sorted(data.items(), key=lambda item: item[0])
     all_in_use_events = 0
@@ -59,21 +93,28 @@ def print_results(data, number_of_extensions):
             high_use_events += 1
         elif count > number_of_extensions * 3 / 4:
             high_use_events += 1
-        print('{}  {}'.format(time, count))
-
+        print('{}\t{}'.format(time, count))
     print('{} total seconds of high usage:'.format(high_use_events), file=sys.stderr)
     print('{} total seconds of all in use:'.format(all_in_use_events), file=sys.stderr)
 
 
-def summarize(smdr_reader, extensions):
+def summarize(smdr_reader, extensions, zero_mode):
     extension_data = dict((extension, collections.defaultdict(int)) for extension in extensions)
 
     for file in smdr_reader.file_reader():
         parse_lines(file, extension_data)
     combined_data = combine_extensions(extension_data)
-    print_results(combined_data, len(extensions))
+    if zero_mode is True:
+        print_results_with_zeroes(combined_data, len(extensions))
+    else:
+        print_results(combined_data, len(extensions))
 
 
+
+zero_mode = False
+while '-0' in sys.argv:
+    zero_mode = True
+    sys.argv.remove('-0')
 
 start_date = sys.argv[1]
 end_date = sys.argv[2]
@@ -85,10 +126,10 @@ except smdrreader.InvalidInputException as e:
     print('Error: ' + str(e), file=sys.stderr)
     exit(1)
 
-extensions = sys.argv[4:]
+extensions = split_args(sys.argv[4:])
 
 for extension in extensions:
     if not extension.isnumeric():
         raise smdrreader.InvalidInputException('Invalid extension: "{}"'.format(extension))
 
-summarize(smdr_reader, extensions)
+summarize(smdr_reader, extensions, zero_mode)
