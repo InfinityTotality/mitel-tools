@@ -131,8 +131,7 @@ def get_unique_calls(events_by_id):
     return unique_event_lists
 
 
-def print_unique_calls(events_by_id):
-    unique_event_lists = get_unique_calls(events_by_id)
+def print_calls(unique_event_lists):
     unique_event_lists.sort(key=lambda x: x[0].time)
     unique_event_lists.sort(key=lambda x: x[0].date)
     for list in unique_event_lists:
@@ -142,8 +141,7 @@ def print_unique_calls(events_by_id):
     return len(unique_event_lists)
 
 
-def print_unique_anis(events_by_id):
-    unique_event_lists = get_unique_calls(events_by_id)
+def print_anis(unique_event_lists):
     unique_event_lists.sort(key=lambda x: x[0].ani)
     for events in unique_event_lists:
         anis = set()
@@ -152,11 +150,67 @@ def print_unique_anis(events_by_id):
         print('\n'.join(anis))
 
 
-def sort_calls(events_by_id):
-    for event_list in events_by_id.values():
-        event_list.sort(key=operator.attrgetter('sequence_id'))
-        event_list.sort(key=operator.attrgetter('call_id'))
-        event_list.sort(key=operator.attrgetter('time'))
+def sort_calls(call_event_lists):
+    debug_print('Sorting calls')
+    sorted_event_lists = []
+    for event_list in call_event_lists:
+        call_id_lists = defaultdict(list)
+        for event in event_list:
+            call_id_lists[event.call_id].append(event)
+        for call_id_list in call_id_lists.values():
+            call_id_list.sort(key=operator.attrgetter('sequence_id'))
+        sorted_list = recombine_call_events(call_id_lists)
+        if sorted_list is None:
+            print('Warning: failed to sort call', file=sys.stderr)
+            sorted_event_lists.append(event_list)
+        elif len(sorted_list) < len(event_list):
+            print('Warning: call events lost during sorting, '
+                  'falling back to unsorted', file=sys.stderr)
+            sorted_event_lists.append(event_list)
+        else:
+            sorted_event_lists.append(sorted_list)
+    return sorted_event_lists
+
+
+def recombine_call_events(call_id_lists):
+    first_id = None
+    for call_id,events in call_id_lists.items():
+        if events[0].associated_id == '':
+            first_id = call_id
+            break
+    if first_id is None:
+        return None
+    insertions_to_make = []
+    for event_list in call_id_lists.values():
+        if event_list[0].associated_id != '':
+            insertions_to_make.append((event_list[0].call_id,
+                                       event_list[0].associated_id))
+    while len(insertions_to_make) > 0:
+        ids_with_insertions = [insertion[1] for insertion
+                               in insertions_to_make]
+        insertions = 0
+        for insertion in insertions_to_make:
+            if insertion[0] not in ids_with_insertions:
+                insert_events(call_id_lists, insertion)
+                insertions_to_make.remove(insertion)
+                insertions += 1
+        if insertions == 0:
+            return None
+    return call_id_lists[first_id]
+
+
+def insert_events(call_id_lists, insertion):
+    insert_id = insertion[0]
+    insert_into_id = insertion[1]
+    insert_list = call_id_lists[insert_id]
+    insert_into_list = call_id_lists[insert_into_id]
+    insert_index = 0
+    while insert_index < len(insert_into_list) - 1:
+        if insert_list[0].time < insert_into_list[insert_index].time\
+           or insert_into_list[insert_index].associated_id == insert_id:
+            break
+        insert_index += 1
+    insert_into_list[insert_index:insert_index] = insert_list
 
 
 def get_call_ids_by_filter(all_data, filter_condition):
@@ -202,9 +256,11 @@ def process_days(reader, filter_conditions, call_ids):
             events = group_all_calls(all_data)
         else:
             continue
-        sort_calls(events)
-        unique_calls += print_unique_calls(events)
-    print('\n{} unique calls processed'.format(unique_calls), file=sys.stderr)
+        unique_events = get_unique_calls(events)
+        unique_call_count += len(unique_events)
+        sorted_calls = sort_calls(unique_events)
+        print_calls(sorted_calls)
+    print('\n{} unique calls processed'.format(unique_call_count), file=sys.stderr)
 
 
 
