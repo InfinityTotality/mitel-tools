@@ -31,8 +31,12 @@ def parse_lines(smdr_lines, extension_data):
             else:
                 debug_print(str(e) + ': ' + line.strip())
             continue
-        extension = event.called_party
-        if extension in extension_data:
+        extension = None
+        if event.called_party in extension_data:
+            extension = event.called_party
+        elif outbound_mode is True and event.calling_party in extension_data:
+            extension = event.calling_party
+        if extension is not None:
             event_start_time = datetime.datetime.strptime(event.time, '%H:%M:%S')
             event_duration = duration_to_seconds(event.duration)
             i = 0
@@ -122,6 +126,10 @@ def summarize(smdr_reader, extensions, zero_mode):
         print_results(combined_data, len(extensions))
 
 
+outbound_mode = False
+while '-i' in sys.argv:
+    outbound_mode = True
+    sys.argv.remove('-i')
 
 zero_mode = False
 while '-0' in sys.argv:
@@ -150,3 +158,4 @@ for extension in extensions:
         raise smdrreader.InvalidInputException('Invalid extension: "{}"'.format(extension))
 
 summarize(smdr_reader, extensions, zero_mode)
+
