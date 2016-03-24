@@ -131,9 +131,9 @@ def summarize(smdr_reader, extensions, zero_mode):
         print_results(combined_data, len(extensions))
 
 
-outbound_mode = False
+outbound_mode = True
 while '-i' in sys.argv:
-    outbound_mode = True
+    outbound_mode = False
     sys.argv.remove('-i')
 
 zero_mode = False
