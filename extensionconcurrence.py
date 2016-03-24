@@ -1,5 +1,5 @@
 import sys
-import datetime
+import time
 import collections
 import smdrreader
 from os import path
@@ -37,27 +37,29 @@ def parse_lines(smdr_lines, extension_data):
         elif outbound_mode is True and event.calling_party in extension_data:
             extension = event.calling_party
         if extension is not None:
-            event_start_time = datetime.datetime.strptime(event.time, '%H:%M:%S')
-            event_duration = duration_to_seconds(event.duration)
-            i = 0
-            while i < event_duration:
-                event_current_time = event_start_time + datetime.timedelta(seconds=i)
-                event_timedate_string = '{} {}'.format(event.date,
-                        event_current_time.strftime('%H:%M:%S'))
-                if extension_data[extension][event_timedate_string] == 1:
+            try:
+                event_start_time = time.strptime('{} {}'.format(event.date,
+                                                 event.time), '%m/%d %H:%M:%S')
+                event_duration = duration_to_seconds(event.duration)
+            except Exception as e:
+                debug_print('Error processing event time or duration: {}'
+                            .format(str(e)))
+            current_timestamp = time.mktime(event_start_time)
+            end_timestamp = current_timestamp + event_duration
+            while current_timestamp < end_timestamp:
+                if extension_data[extension][current_timestamp] == True:
                     print('Duplicate call events detected for extension ' +
                           '{} on {} at {}'.format(
                           extension,event.date,event.time), file=sys.stderr)
-                extension_data[extension][event_timedate_string] = 1
-                i += 1
+                extension_data[extension][current_timestamp] = True
+                current_timestamp += 1
 
 
 def combine_extensions(extension_data):
-    output_lines = []
     combined_data = collections.defaultdict(int)
     for extension in extension_data:
-        for datetime in extension_data[extension]:
-            combined_data[datetime] += 1
+        for timestamp in extension_data[extension]:
+            combined_data[timestamp] += 1
     return combined_data
 
 
@@ -72,44 +74,47 @@ def split_args(args):
                 split_args.extend([str(int) for int in int_list])
             else:
                 split_args.append(word)
-    return split_args
+    args_dict = {arg: None for arg in split_args}
+    return args_dict
 
 
 def print_results_with_zeroes(data, number_of_extensions):
     sorted_data = sorted(data)
-    current_datetime = datetime.datetime.strptime(sorted_data[0], '%m/%d %H:%M:%S')
-    end_datetime = datetime.datetime.strptime(sorted_data[-1], '%m/%d %H:%M:%S')
+    current_timestamp = sorted_data[0]
+    end_timestamp = sorted_data[-1]
     all_in_use_events = 0
     high_use_events = 0
 
-    while current_datetime <= end_datetime:
-        time = current_datetime.strftime('%m/%d %H:%M:%S')
-        count = data[time]
+    while current_timestamp <= end_timestamp:
+        time_string = time.strftime('%m/%d %H:%M:%S', time.localtime(current_timestamp))
+        count = data[current_timestamp]
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
         elif count >= number_of_extensions * 3 / 4 or\
                 number_of_extensions - count == 1:
             high_use_events += 1
-        print('{}\t{}'.format(time, count))
-        current_datetime += datetime.timedelta(seconds=1)
+        print('{}\t{}'.format(time_string, count))
+        current_timestamp += 1
     print('{} total seconds of high usage'.format(high_use_events), file=sys.stderr)
     print('{} total seconds of all in use'.format(all_in_use_events), file=sys.stderr)
 
 
 def print_results(data, number_of_extensions):
-    sorted_data = sorted(data.items(), key=lambda item: item[0])
+    sorted_data = sorted(data)
     all_in_use_events = 0
     high_use_events = 0
 
-    for time,count in sorted_data:
+    for timestamp in sorted_data:
+        time_string = time.strftime('%m/%d %H:%M:%S', time.localtime(timestamp))
+        count = data[timestamp]
         if count == number_of_extensions:
             all_in_use_events += 1
             high_use_events += 1
         elif count >= number_of_extensions * 3 / 4 or\
                 number_of_extensions - count == 1:
             high_use_events += 1
-        print('{}\t{}'.format(time, count))
+        print('{}\t{}'.format(time_string, count))
     print('{} total seconds of high usage'.format(high_use_events), file=sys.stderr)
     print('{} total seconds of all in use'.format(all_in_use_events), file=sys.stderr)
 

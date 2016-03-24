@@ -114,6 +114,8 @@ def group_all_calls(all_data):
     events_by_id = defaultdict(list)
     ids_by_events = defaultdict(list)
     for event in all_data:
+        if event.call_id == '        ':
+            continue
         add_event(event.call_id, event, events_by_id, ids_by_events)
         if event.associated_id != '':
             associate_ids(event.associated_id, event.call_id, events_by_id,
@@ -154,16 +156,21 @@ def sort_calls(call_event_lists):
     debug_print('Sorting calls')
     sorted_event_lists = []
     for event_list in call_event_lists:
-        call_id_lists = defaultdict(list)
+        event_list.sort(key=operator.attrgetter('sequence_id'))
+        event_list.sort(key=operator.attrgetter('call_id'))
+        call_id_lists = {}
+        last_call_ids = (None, None)
         for event in event_list:
-            call_id_lists[event.call_id].append(event)
-        for call_id_list in call_id_lists.values():
-            call_id_list.sort(key=operator.attrgetter('sequence_id'))
+            if event.associated_id not in [last_assoc_id, '', event.call_id]:
+                call_id_lists[(event.call_id, event.associated_id)] = \
+                        (last_assoc_id, [event])
+                last_assoc_id = event.associated_id
+            call_id_lists[(event.call_id, last_assoc_id)].append(event)
         sorted_list = recombine_call_events(call_id_lists)
         if sorted_list is None:
             print('Warning: failed to sort call', file=sys.stderr)
             sorted_event_lists.append(event_list)
-        elif len(sorted_list) < len(event_list):
+        elif len(sorted_list) != len(event_list):
             print('Warning: call events lost during sorting, '
                   'falling back to unsorted', file=sys.stderr)
             sorted_event_lists.append(event_list)
@@ -174,17 +181,16 @@ def sort_calls(call_event_lists):
 
 def recombine_call_events(call_id_lists):
     first_id = None
-    for call_id,events in call_id_lists.items():
-        if events[0].associated_id == '':
-            first_id = call_id
+    for call_id,assoc_id in call_id_lists:
+        if assoc_id == '':
+            first_id = (call_id, assoc_id)
             break
     if first_id is None:
         return None
     insertions_to_make = []
-    for event_list in call_id_lists.values():
-        if event_list[0].associated_id != '':
-            insertions_to_make.append((event_list[0].call_id,
-                                       event_list[0].associated_id))
+    for call_id,assoc_id in call_id_lists:
+        if assoc_id != '':
+            insertions_to_make.append((call_id,assoc_id))
     while len(insertions_to_make) > 0:
         ids_with_insertions = [insertion[1] for insertion
                                in insertions_to_make]
@@ -202,10 +208,10 @@ def recombine_call_events(call_id_lists):
 def insert_events(call_id_lists, insertion):
     insert_id = insertion[0]
     insert_into_id = insertion[1]
-    insert_list = call_id_lists[insert_id]
+    insert_list = call_id_lists[insertion]
     insert_into_list = call_id_lists[insert_into_id]
     insert_index = 0
-    while insert_index < len(insert_into_list) - 1:
+    while insert_index < len(insert_into_list):
         if insert_list[0].time < insert_into_list[insert_index].time\
            or insert_into_list[insert_index].associated_id == insert_id:
             break
@@ -224,6 +230,8 @@ def get_call_ids_by_filter(all_data, filter_condition):
                         .format(filter_condition), file=sys.stderr)
             break
         if result is True:
+            if event.call_id == '        ':
+                continue
             debug_print('Found call id {} matching filter'
                         .format(event.call_id))
             call_ids.add(event.call_id)
@@ -232,8 +240,24 @@ def get_call_ids_by_filter(all_data, filter_condition):
     return call_ids
 
 
+def get_no_id_events_by_filter(all_data, filter_condition):
+    event_lists = []
+    for event in all_data:
+        if event.call_id == '        ':
+            try:
+                result = eval(filter_condition)
+            except:
+                print('Failure evaluating filter condition "{}"'
+                            .format(filter_condition), file=sys.stderr)
+                break
+            if result is True:
+                event_lists.append([event])
+    return event_lists
+
+
 def process_days(reader, filter_conditions, call_ids):
-    unique_calls = 0
+    no_id_events = []
+    unique_call_count = 0
     for file_dict in reader.date_reader():
         debug_print('Retrieved file dictionary for date {}'.format(
                     reader.current_date.strftime('%Y-%m-%d'))
@@ -245,6 +269,8 @@ def process_days(reader, filter_conditions, call_ids):
         for condition in filter_conditions:
             current_call_ids = current_call_ids.union(get_call_ids_by_filter(
                                                       all_data, condition))
+            no_id_events.extend(get_no_id_events_by_filter(all_data,
+                                                           condition))
 
         debug_print('{} call IDs selected for {}:'.format(len(current_call_ids),
                     reader.current_date.strftime('%Y-%m-%d')))
@@ -257,6 +283,7 @@ def process_days(reader, filter_conditions, call_ids):
         else:
             continue
         unique_events = get_unique_calls(events)
+        unique_events.extend(no_id_events)
         unique_call_count += len(unique_events)
         sorted_calls = sort_calls(unique_events)
         print_calls(sorted_calls)

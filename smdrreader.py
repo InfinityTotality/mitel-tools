@@ -42,6 +42,7 @@ class SMDRReader(object):
                 if re.match('s' + datestring + '\.(zip|txt)',
                             file, re.I) is not None:
                     basename = file
+                    break
             if basename is None:
                 return None
 
