@@ -160,6 +160,7 @@ def sort_calls(call_event_lists):
         event_list.sort(key=operator.attrgetter('call_id'))
         call_id_lists = {}
         last_call_ids = (None, None)
+        last_assoc_id = ''
         for event in event_list:
             if event.associated_id not in [last_assoc_id, '', event.call_id]:
                 call_id_lists[(event.call_id, event.associated_id)] = \
@@ -223,6 +224,8 @@ def get_call_ids_by_filter(all_data, filter_condition):
     debug_print('Processing filter "{}"'.format(filter_condition))
     call_ids = set()
     for event in all_data:
+        if event.call_id == '        ':
+            continue
         try:
             result = eval(filter_condition)
         except:
@@ -230,8 +233,6 @@ def get_call_ids_by_filter(all_data, filter_condition):
                         .format(filter_condition), file=sys.stderr)
             break
         if result is True:
-            if event.call_id == '        ':
-                continue
             debug_print('Found call id {} matching filter'
                         .format(event.call_id))
             call_ids.add(event.call_id)
@@ -256,9 +257,9 @@ def get_no_id_events_by_filter(all_data, filter_condition):
 
 
 def process_days(reader, filter_conditions, call_ids):
-    no_id_events = []
     unique_call_count = 0
     for file_dict in reader.date_reader():
+        no_id_events = []
         debug_print('Retrieved file dictionary for date {}'.format(
                     reader.current_date.strftime('%Y-%m-%d'))
                     + ' from reader containing {} files'.format(
@@ -281,7 +282,7 @@ def process_days(reader, filter_conditions, call_ids):
         elif len(filter_conditions) == 0:
             events = group_all_calls(all_data)
         else:
-            continue
+            events = {}
         unique_events = get_unique_calls(events)
         unique_events.extend(no_id_events)
         unique_call_count += len(unique_events)
