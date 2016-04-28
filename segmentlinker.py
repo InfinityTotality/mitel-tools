@@ -158,6 +158,8 @@ def sort_calls(call_event_lists):
     for event_list in call_event_lists:
         event_list.sort(key=operator.attrgetter('sequence_id'))
         event_list.sort(key=operator.attrgetter('call_id'))
+        sorted_event_lists.append(event_list)
+        continue
         call_id_lists = {}
         last_call_ids = (None, None)
         last_assoc_id = ''
